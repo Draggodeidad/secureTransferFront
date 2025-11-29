@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+:root {
+  /* Paleta Fresh Mint - Minimalista y Zen */
+  --background: #ffffff; /* Blanco Puro */
+  --foreground: #111827; /* Gray 900 - Texto Principal */
+
+  /* Acentos Fresh Mint */
+  --accent-primary: #059669; /* Emerald 600 - Verde profundo y elegante */
+  --accent-hover: #047857; /* Emerald 700 - Hover más oscuro */
+  --accent-soft: #d1fae5; /* Emerald 100 - Estados de éxito */
+  --accent-light: #ecfdf5; /* Emerald 50 - Fondos suaves */
+
+  /* Escala de grises para texto y elementos */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Sombras suaves */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* Glassmorphism sutil */
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(5, 150, 105, 0.1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f0f0f;
+    --foreground: #e8e8e8;
+    --color-pale-gray: #1a1a1a;
+    --color-warm-white: #141414;
+    --glass-bg: rgba(20, 20, 20, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    var(--font-geist-sans),
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  letter-spacing: -0.01em; /* Tracking ajustado para elegancia */
+  font-feature-settings:
+    "ss01" on,
+    "ss02" on; /* Stylistic sets para fuentes modernas */
+}
+
+/* Fondo minimalista con textura sutil */
+.fresh-mint-bg {
+  background: #ffffff;
+  background-image:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(5, 150, 105, 0.03) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(5, 150, 105, 0.02) 0%,
+      transparent 50%
+    );
+}
+
+/* Card con sombra sutil */
+.glass-card {
+  background: #ffffff;
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+}
+
+.glass-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-primary);
+  transition: all 0.3s ease;
+}
+
+/* Transiciones suaves globales */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrollbar personalizado (minimalista) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
