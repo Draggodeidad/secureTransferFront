@@ -39,12 +39,15 @@ export default function DownloadPage() {
   const [privateKeyFile, setPrivateKeyFile] = useState<File | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Redirigir si no está autenticado
+  // Redirigir si no está autenticado, guardando la URL actual
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login");
+      // Guardar la URL actual para redirigir después del login
+      const currentPath = `/download/${packageId}`;
+      localStorage.setItem("redirectAfterLogin", currentPath);
+      router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, packageId]);
 
   // Cargar metadatos al iniciar
   useEffect(() => {

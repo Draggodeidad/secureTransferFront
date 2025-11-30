@@ -1,6 +1,8 @@
 /**
- * Generar par de claves RSA para el receptor
- * Esto se ejecuta en el navegador del receptor
+ * @deprecated Usa setupKeys() del API en su lugar
+ * Generar par de claves RSA para el receptor (OBSOLETO)
+ * Ahora el backend genera las claves automáticamente
+ * Esto se mantiene solo para compatibilidad temporal
  */
 export async function generateKeyPair(): Promise<{
   publicKey: string;
@@ -53,12 +55,18 @@ export function saveKeys(publicKey: string, privateKey: string) {
 
 /**
  * Obtener claves guardadas
+ * Soporta tanto el formato antiguo (myPrivateKey) como el nuevo (user_private_key)
  */
 export function getMyKeys(): { publicKey: string; privateKey: string } | null {
   if (typeof window === "undefined") return null;
 
   const publicKey = localStorage.getItem("myPublicKey");
-  const privateKey = localStorage.getItem("myPrivateKey");
+
+  // Buscar clave privada en ambos formatos (compatibilidad)
+  let privateKey = localStorage.getItem("myPrivateKey");
+  if (!privateKey) {
+    privateKey = localStorage.getItem("user_private_key");
+  }
 
   if (!publicKey || !privateKey) return null;
 
@@ -66,10 +74,17 @@ export function getMyKeys(): { publicKey: string; privateKey: string } | null {
 }
 
 /**
- * Verificar si el usuario tiene claves
+ * Verificar si el usuario tiene claves guardadas localmente
  */
 export function hasKeys(): boolean {
   return getMyKeys() !== null;
+}
+
+// Función auxiliar para convertir buffer a PEM
+function bufferToPem(buffer: ArrayBuffer, type: string): string {
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const formatted = base64.match(/.{1,64}/g)?.join("\n") || base64;
+  return `-----BEGIN ${type}-----\n${formatted}\n-----END ${type}-----`;
 }
 
 /**
@@ -155,13 +170,6 @@ export function downloadFile(blob: Blob, filename: string) {
 export function downloadTextFile(content: string, filename: string) {
   const blob = new Blob([content], { type: "text/plain" });
   downloadFile(blob, filename);
-}
-
-// Función auxiliar para convertir buffer a PEM
-function bufferToPem(buffer: ArrayBuffer, type: string): string {
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-  const formatted = base64.match(/.{1,64}/g)?.join("\n") || base64;
-  return `-----BEGIN ${type}-----\n${formatted}\n-----END ${type}-----`;
 }
 
 /**

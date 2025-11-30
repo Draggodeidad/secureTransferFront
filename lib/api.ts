@@ -170,7 +170,139 @@ export async function getPackageMetadata(
 }
 
 /**
- * Registrar clave pública del usuario
+ * Generar y configurar claves RSA automáticamente (nuevo backend)
+ * El backend genera las claves y retorna el par completo
+ */
+export async function setupKeys(
+  authToken: string,
+  encryptPrivateKey?: boolean,
+  passphrase?: string
+): Promise<{
+  publicKey: string;
+  privateKey: string;
+  fingerprint: string;
+}> {
+  const body: any = {};
+  if (encryptPrivateKey && passphrase) {
+    body.encryptPrivateKey = true;
+    body.passphrase = passphrase;
+  }
+
+  const response = await fetch(`${API_URL}/auth/setup-keys`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Error al configurar claves",
+    }));
+    throw new Error(error.error || "Error al configurar claves");
+  }
+
+  return response.json();
+}
+
+/**
+ * Obtener perfil del usuario autenticado
+ */
+export async function getUserProfile(authToken: string): Promise<{
+  userId: string;
+  email: string;
+  displayName?: string;
+  avatarUrl?: string;
+  publicKey?: string;
+  createdAt: string;
+  totalUploads: number;
+  totalDownloads: number;
+  storageUsed: number;
+}> {
+  const response = await fetch(`${API_URL}/auth/profile`, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Error al obtener perfil",
+    }));
+    throw new Error(error.error || "Error al obtener perfil");
+  }
+
+  return response.json();
+}
+
+/**
+ * Actualizar perfil del usuario
+ */
+export async function updateUserProfile(
+  authToken: string,
+  data: {
+    displayName?: string;
+    avatarUrl?: string;
+  }
+): Promise<void> {
+  const response = await fetch(`${API_URL}/auth/profile`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Error al actualizar perfil",
+    }));
+    throw new Error(error.error || "Error al actualizar perfil");
+  }
+}
+
+/**
+ * Obtener clave pública de un usuario por userId
+ */
+export async function getUserPublicKeyById(userId: string): Promise<string> {
+  const response = await fetch(`${API_URL}/auth/user/${userId}/public-key`);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Error al obtener clave pública",
+    }));
+    throw new Error(error.error || "Error al obtener clave pública");
+  }
+
+  const data = await response.json();
+  return data.publicKey;
+}
+
+/**
+ * Obtener clave pública de un usuario por email
+ */
+export async function getUserPublicKeyByEmail(email: string): Promise<string> {
+  const response = await fetch(
+    `${API_URL}/auth/user/email/${encodeURIComponent(email)}/public-key`
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Error al obtener clave pública",
+    }));
+    throw new Error(error.error || "Error al obtener clave pública");
+  }
+
+  const data = await response.json();
+  return data.publicKey;
+}
+
+/**
+ * @deprecated Usa setupKeys() en su lugar
+ * Registrar clave pública del usuario (método antiguo)
  */
 export async function registerPublicKey(
   userId: string,
@@ -195,7 +327,8 @@ export async function registerPublicKey(
 }
 
 /**
- * Obtener claves públicas del usuario
+ * @deprecated Usa getUserProfile() en su lugar
+ * Obtener claves públicas del usuario (método antiguo)
  */
 export async function getUserPublicKeys(
   userId: string,

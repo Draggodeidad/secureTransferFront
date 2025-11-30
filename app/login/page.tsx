@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Alert } from "@/components/Alert";
@@ -10,15 +10,29 @@ import { Shield, Key, Clock } from "lucide-react";
 export default function LoginPage() {
   const { user, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Redirigir si ya está autenticado
   useEffect(() => {
     if (user && !loading) {
-      router.push("/upload");
+      // Verificar si hay una URL de redirección
+      const redirectUrl =
+        searchParams.get("redirect") ||
+        localStorage.getItem("redirectAfterLogin");
+
+      if (redirectUrl) {
+        // Limpiar el localStorage
+        localStorage.removeItem("redirectAfterLogin");
+        // Redirigir a la URL guardada
+        router.push(redirectUrl);
+      } else {
+        // Redirigir a la página de upload por defecto
+        router.push("/upload");
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, searchParams]);
 
   const handleSignIn = async () => {
     setError("");

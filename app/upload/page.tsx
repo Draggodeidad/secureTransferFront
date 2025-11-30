@@ -7,7 +7,11 @@ import { Header } from "@/components/Header";
 import { LoadingPage, LoadingSpinner } from "@/components/LoadingSpinner";
 import { FileDropZone } from "@/components/FileDropZone";
 import { Alert } from "@/components/Alert";
-import { uploadFile } from "@/lib/api";
+import {
+  uploadFile,
+  getUserPublicKeyByEmail,
+  getUserPublicKeyById,
+} from "@/lib/api";
 import {
   Copy,
   Check,
@@ -16,6 +20,7 @@ import {
   Shield,
   Clock,
   Sparkles,
+  Search,
 } from "lucide-react";
 
 interface UploadResult {
@@ -33,6 +38,11 @@ export default function UploadPage() {
 
   const [file, setFile] = useState<File | null>(null);
   const [recipientPublicKey, setRecipientPublicKey] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [isSearchingKey, setIsSearchingKey] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [keyFoundByEmail, setKeyFoundByEmail] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [result, setResult] = useState<UploadResult | null>(null);
@@ -55,6 +65,50 @@ export default function UploadPage() {
   const handleClearFile = () => {
     setFile(null);
     setError("");
+  };
+
+  const handleSearchPublicKey = async () => {
+    if (!recipientEmail.trim()) {
+      setSearchError("Por favor ingresa un email");
+      return;
+    }
+
+    setIsSearchingKey(true);
+    setSearchError("");
+
+    try {
+      const publicKey = await getUserPublicKeyByEmail(recipientEmail.trim());
+      setRecipientPublicKey(publicKey);
+      setSearchError("");
+      setKeyFoundByEmail(true);
+      setShowManualInput(false);
+      console.log("✅ Clave pública encontrada para:", recipientEmail);
+    } catch (err: any) {
+      console.error("Error al buscar clave pública:", err);
+      setSearchError(
+        err.message || "No se encontró clave pública para este usuario"
+      );
+      setRecipientPublicKey("");
+      setKeyFoundByEmail(false);
+    } finally {
+      setIsSearchingKey(false);
+    }
+  };
+
+  const handleClearRecipient = () => {
+    setRecipientEmail("");
+    setRecipientPublicKey("");
+    setKeyFoundByEmail(false);
+    setShowManualInput(false);
+    setSearchError("");
+  };
+
+  const handleToggleManualInput = () => {
+    setShowManualInput(!showManualInput);
+    if (!showManualInput) {
+      setKeyFoundByEmail(false);
+      setRecipientEmail("");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -204,19 +258,115 @@ export default function UploadPage() {
             {/* Clave pública del receptor */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-6 tracking-tight">
-                Clave pública del receptor
+                Buscar receptor por email
               </label>
-              <textarea
-                value={recipientPublicKey}
-                onChange={(e) => setRecipientPublicKey(e.target.value)}
-                placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"
-                rows={6}
-                className="block w-full px-6 py-4 border border-gray-200 rounded-3xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 font-mono text-xs bg-white transition-all duration-300"
-                disabled={isUploading}
-              />
-              <p className="text-xs text-gray-400 mt-4 font-light">
-                Pega aquí la clave pública RSA del receptor en formato PEM
-              </p>
+              <div className="flex gap-3 mb-4">
+                <input
+                  type="email"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  placeholder="ejemplo@email.com"
+                  className="flex-1 px-6 py-4 border border-gray-200 rounded-3xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 text-sm bg-white transition-all duration-300"
+                  disabled={isUploading || isSearchingKey || keyFoundByEmail}
+                />
+                {keyFoundByEmail ? (
+                  <button
+                    type="button"
+                    onClick={handleClearRecipient}
+                    className="px-6 py-4 bg-gray-500 text-white rounded-3xl hover:bg-gray-600 transition-all duration-300 ease-out flex items-center gap-2 hover:shadow-md hover:scale-105"
+                  >
+                    <span>Cambiar</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSearchPublicKey}
+                    disabled={
+                      isUploading || isSearchingKey || !recipientEmail.trim()
+                    }
+                    className="px-6 py-4 bg-emerald-600 text-white rounded-3xl hover:bg-emerald-700 disabled:bg-gray-200 disabled:cursor-not-allowed transition-all duration-300 ease-out flex items-center gap-2 hover:shadow-md hover:scale-105 disabled:hover:scale-100"
+                  >
+                    {isSearchingKey ? (
+                      <>
+                        <LoadingSpinner
+                          size="sm"
+                          className="border-white border-t-transparent"
+                        />
+                        <span>Buscando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-5 h-5" strokeWidth={2} />
+                        <span>Buscar</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {searchError && (
+                <Alert type="error" message={searchError} className="mb-4" />
+              )}
+
+              {/* Mensaje de éxito cuando se encuentra la clave */}
+              {keyFoundByEmail && !showManualInput && (
+                <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                  <div className="flex items-center gap-2 text-emerald-700 mb-2">
+                    <Check className="w-5 h-5" />
+                    <span className="font-medium">
+                      Clave pública encontrada para {recipientEmail}
+                    </span>
+                  </div>
+                  <p className="text-xs text-emerald-600 font-light">
+                    El archivo será cifrado para este receptor
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleToggleManualInput}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 underline mt-2"
+                  >
+                    Ver/editar clave manualmente
+                  </button>
+                </div>
+              )}
+
+              {/* Mostrar input manual solo si no se encontró por email o si se solicita */}
+              {(!keyFoundByEmail || showManualInput) && (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="block text-sm font-medium text-gray-700 tracking-tight">
+                      {keyFoundByEmail
+                        ? "Editar clave pública manualmente"
+                        : "O pega la clave pública manualmente"}
+                    </label>
+                    {showManualInput && (
+                      <button
+                        type="button"
+                        onClick={handleToggleManualInput}
+                        className="text-xs text-gray-500 hover:text-gray-700"
+                      >
+                        Ocultar
+                      </button>
+                    )}
+                  </div>
+                  <textarea
+                    value={recipientPublicKey}
+                    onChange={(e) => {
+                      setRecipientPublicKey(e.target.value);
+                      setKeyFoundByEmail(false);
+                    }}
+                    placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"
+                    rows={6}
+                    className="block w-full px-6 py-4 border border-gray-200 rounded-3xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 font-mono text-xs bg-white transition-all duration-300"
+                    disabled={isUploading}
+                  />
+                  <p className="text-xs text-gray-400 mt-4 font-light">
+                    {recipientPublicKey
+                      ? "✅ Clave pública cargada"
+                      : "Busca por email o pega la clave pública RSA del receptor en formato PEM"}
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Barra de progreso */}
