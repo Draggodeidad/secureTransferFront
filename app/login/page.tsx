@@ -2,12 +2,12 @@
 
 import { useAuth } from "@/lib/auth-context";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Alert } from "@/components/Alert";
 import { Shield, Key, Clock } from "lucide-react";
 
-export default function LoginPage() {
+function LoginContent() {
   const { user, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -171,5 +171,19 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <LoadingSpinner size="lg" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }
