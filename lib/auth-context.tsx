@@ -61,12 +61,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const initializeUserKeys = async (accessToken: string) => {
     try {
-      console.log("🔑 Inicializando claves del usuario...");
-      console.log("📍 API_URL:", API_URL);
-      console.log("🎫 Access Token:", accessToken.substring(0, 20) + "...");
+      // console.log("🔑 Inicializando claves del usuario...");
+      // console.log("📍 API_URL:", API_URL);
+      // console.log("🎫 Access Token:", accessToken.substring(0, 20) + "...");
 
       const url = `${API_URL}/auth/initialize`;
-      console.log("🌐 Llamando a:", url);
+      // console.log("🌐 Llamando a:", url);
 
       const response = await fetch(url, {
         method: "POST",
@@ -75,21 +75,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
-      console.log("📥 Respuesta HTTP:", response.status, response.statusText);
+      // console.log("📥 Respuesta HTTP:", response.status, response.statusText);
 
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ " + data.message);
-        console.log("📦 Datos recibidos:", {
-          hasPublicKey: !!data.publicKey,
-          hasPrivateKey: !!data.privateKey,
-          profileUserId: data.profile?.userId,
-        });
+        // console.log("✅ " + data.message);
+        // console.log("📦 Datos recibidos:", {
+        //   hasPublicKey: !!data.publicKey,
+        //   hasPrivateKey: !!data.privateKey,
+        //   profileUserId: data.profile?.userId,
+        // });
 
         // Guardar clave privada si se generó
         if (data.privateKey) {
           localStorage.setItem("user_private_key", data.privateKey);
-          console.log("🔐 Clave privada guardada en localStorage");
+          // console.log("🔐 Clave privada guardada en localStorage");
         }
 
         // Guardar clave pública también
@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem("myPublicKey", publicKey);
           setPublicKey(publicKey);
           setHasKeys(true);
-          console.log("🔓 Clave pública guardada en localStorage");
+          // console.log("🔓 Clave pública guardada en localStorage");
         }
 
         return true;
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           error: "Error al inicializar",
         }));
         console.error("❌ Error al inicializar:", errorData.error);
-        console.error("📄 Error completo:", errorData);
+        // console.error("📄 Error completo:", errorData);
         return false;
       }
     } catch (error) {
@@ -118,38 +118,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAndGenerateKeys = async (userId: string, token: string) => {
     try {
-      console.log("🔍 Verificando claves para usuario:", userId);
+      // console.log("🔍 Verificando claves para usuario:", userId);
 
       // Verificar si tiene claves localmente
       const localKeys = getMyKeys();
       if (localKeys) {
         setHasKeys(true);
         setPublicKey(localKeys.publicKey);
-        console.log("✅ Claves encontradas localmente");
-        console.log(
-          "🔓 Public Key (primeros 50 chars):",
-          localKeys.publicKey.substring(0, 50) + "..."
-        );
+        // console.log("✅ Claves encontradas localmente");
+        // console.log(
+        //   "🔓 Public Key (primeros 50 chars):",
+        //   localKeys.publicKey.substring(0, 50) + "..."
+        // );
         return;
       }
 
-      console.log("⚠️ No se encontraron claves locales");
-      console.log("🔄 Intentando inicializar usuario en el backend...");
+      // console.log("⚠️ No se encontraron claves locales");
+      // console.log("🔄 Intentando inicializar usuario en el backend...");
 
       const initialized = await initializeUserKeys(token);
 
       if (initialized) {
-        console.log("✅ Inicialización completada");
+        // console.log("✅ Inicialización completada");
         // Verificar nuevamente si ahora tenemos las claves
         const newLocalKeys = getMyKeys();
         if (newLocalKeys) {
           setHasKeys(true);
           setPublicKey(newLocalKeys.publicKey);
-          console.log("✅ Usuario inicializado y claves guardadas");
-          console.log(
-            "🔓 Public Key (primeros 50 chars):",
-            newLocalKeys.publicKey.substring(0, 50) + "..."
-          );
+          // console.log("✅ Usuario inicializado y claves guardadas");
+          // console.log(
+          //   "🔓 Public Key (primeros 50 chars):",
+          //   newLocalKeys.publicKey.substring(0, 50) + "..."
+          // );
           return;
         } else {
           console.warn(
@@ -161,14 +161,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Si el initialize falló o no retornó claves, verificar en el perfil
-      console.log("🔄 Intentando obtener perfil del usuario...");
+      // console.log("🔄 Intentando obtener perfil del usuario...");
       try {
         const profile = await getUserProfile(token);
-        console.log("📋 Perfil obtenido:", {
-          userId: profile.userId,
-          email: profile.email,
-          hasPublicKey: !!profile.publicKey,
-        });
+        // console.log("📋 Perfil obtenido:", {
+        //   userId: profile.userId,
+        //   email: profile.email,
+        //   hasPublicKey: !!profile.publicKey,
+        // });
 
         if (profile.publicKey) {
           setHasKeys(false); // No tiene clave privada local
@@ -180,9 +180,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error("❌ Error al obtener perfil:", error);
-        console.log(
-          "⚠️ No se pudo obtener el perfil, las claves se generarán en el próximo intento"
-        );
+        // console.log(
+        //   "⚠️ No se pudo obtener el perfil, las claves se generarán en el próximo intento"
+        // );
       }
     } catch (error) {
       console.error("💥 Error al verificar/generar claves:", error);

@@ -97,24 +97,24 @@ export default function HistoryPage() {
     try {
       setLoadingData(true);
       setError(""); // Limpiar errores anteriores
-      console.log("📤 Cargando archivos subidos...");
+      // console.log("📤 Cargando archivos subidos...");
 
       const response = await getUserUploads(session.access_token, 1, 10, "all");
 
-      console.log("📦 Respuesta completa:", response);
-      console.log("📄 Datos:", response.data);
-      console.log("📊 Total archivos:", response.data?.length || 0);
+      // console.log("📦 Respuesta completa:", response);
+      // console.log("📄 Datos:", response.data);
+      // console.log("📊 Total archivos:", response.data?.length || 0);
 
       if (response.data) {
         setUploads(response.data);
-        console.log("✅ Archivos cargados:", response.data.length);
+        // console.log("✅ Archivos cargados:", response.data.length);
       } else {
-        console.warn("⚠️ response.data está vacío o undefined");
+        // console.warn("⚠️ response.data está vacío o undefined");
         setUploads([]);
       }
     } catch (err: any) {
       console.error("❌ Error al cargar archivos subidos:", err);
-      console.error("📄 Mensaje de error:", err.message);
+      // console.error("📄 Mensaje de error:", err.message);
       setError(err.message || "Error al cargar archivos subidos");
       setUploads([]);
     } finally {
@@ -128,7 +128,7 @@ export default function HistoryPage() {
     try {
       setLoadingData(true);
       setError(""); // Limpiar errores anteriores
-      console.log("📥 Cargando archivos compartidos...");
+      // console.log("📥 Cargando archivos compartidos...");
 
       const response = await getSharedFiles(
         session.access_token,
@@ -137,20 +137,20 @@ export default function HistoryPage() {
         "false"
       );
 
-      console.log("📦 Respuesta compartidos:", response);
-      console.log("📄 Datos compartidos:", response.data);
-      console.log("📊 Total compartidos:", response.data?.length || 0);
+      // console.log("📦 Respuesta compartidos:", response);
+      // console.log("📄 Datos compartidos:", response.data);
+      // console.log("📊 Total compartidos:", response.data?.length || 0);
 
       if (response.data) {
         setSharedFiles(response.data);
-        console.log("✅ Archivos compartidos cargados:", response.data.length);
+        // console.log("✅ Archivos compartidos cargados:", response.data.length);
       } else {
-        console.warn("⚠️ response.data de compartidos está vacío");
+        // console.warn("⚠️ response.data de compartidos está vacío");
         setSharedFiles([]);
       }
     } catch (err: any) {
       console.error("❌ Error al cargar archivos compartidos:", err);
-      console.error("📄 Mensaje de error:", err.message);
+      // console.error("📄 Mensaje de error:", err.message);
       setError(err.message || "Error al cargar archivos compartidos");
       setSharedFiles([]);
     } finally {
