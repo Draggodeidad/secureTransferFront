@@ -129,6 +129,11 @@ export default function UploadPage() {
       return;
     }
 
+    if (!user?.id) {
+      setError("No se pudo obtener el ID del usuario");
+      return;
+    }
+
     setIsUploading(true);
     setError("");
     setUploadProgress(0);
@@ -139,9 +144,12 @@ export default function UploadPage() {
         setUploadProgress((prev) => Math.min(prev + 10, 90));
       }, 200);
 
+      console.log("📤 Subiendo archivo con userId:", user.id);
+
       const response = await uploadFile(
         file,
         recipientPublicKey,
+        user.id, // ✅ NUEVO: Enviar userId
         session.access_token
       );
 
@@ -151,6 +159,7 @@ export default function UploadPage() {
       // Debug: ver la respuesta completa
       console.log("Respuesta del backend:", response);
       console.log("Package ID:", response.package_id);
+      console.log("✅ Archivo guardado en Supabase");
 
       setResult(response);
       setFile(null);

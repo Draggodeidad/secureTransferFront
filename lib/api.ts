@@ -35,11 +35,13 @@ export interface UserPublicKey {
 export async function uploadFile(
   file: File,
   recipientPublicKey: string,
+  userId: string,
   authToken?: string
 ): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("recipientPublicKey", recipientPublicKey);
+  formData.append("userId", userId); // ✅ NUEVO: Enviar userId
 
   const headers: Record<string, string> = {};
   if (authToken) {
@@ -61,6 +63,7 @@ export async function uploadFile(
 
   const data = await response.json();
   console.log("🔧 Datos brutos del backend:", data);
+  console.log("✅ Archivo guardado en Supabase con userId:", userId);
 
   // Normalizar la respuesta (manejar tanto snake_case como camelCase)
   return {
@@ -348,4 +351,255 @@ export async function getUserPublicKeys(
   }
 
   return response.json();
+}
+
+// ============================================
+// HISTORIAL Y NOTIFICACIONES
+// ============================================
+
+export interface UserStats {
+  total_uploads: number;
+  total_downloads: number;
+  storage_used_bytes: number;
+  active_files: number;
+  shared_with_me: number;
+  unread_notifications: number;
+}
+
+export interface FileUpload {
+  package_id: string;
+  original_filename: string;
+  original_size: number;
+  mime_type: string;
+  encrypted_size: number;
+  status: string;
+  expires_at: string;
+  created_at: string;
+  download_stats?: {
+    total_downloads: number;
+    last_download: string | null;
+  };
+  file_permissions?: Array<{
+    recipient_id: string;
+    permission_type: string;
+    downloads_count: number;
+    max_downloads: number;
+    revoked: boolean;
+    user_profiles?: {
+      email: string;
+      display_name: string;
+    };
+  }>;
+}
+
+export interface SharedFile {
+  id: string;
+  package_id: string;
+  permission_type: string;
+  max_downloads: number;
+  downloads_count: number;
+  revoked: boolean;
+  granted_at: string;
+  files?: {
+    package_id: string;
+    original_filename: string;
+    original_size: number;
+    mime_type: string;
+    encrypted_size: number;
+    expires_at: string;
+    status: string;
+    created_at: string;
+    user_profiles?: {
+      email: string;
+      display_name: string;
+    };
+  };
+}
+
+export interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  related_package_id: string | null;
+  related_user_id: string | null;
+  read: boolean;
+  read_at: string | null;
+  created_at: string;
+}
+
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+/**
+ * Obtener estadísticas del usuario
+ */
+export async function getUserStats(authToken: string): Promise<UserStats> {
+  const response = await fetch(`${API_URL}/history/stats`, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Error al obtener estadísticas",
+    }));
+    throw new Error(error.error || "Error al obtener estadísticas");
+  }
+
+  const data = await response.json();
+  return data.stats;
+}
+
+/**
+ * Obtener archivos subidos por el usuario
+ */
+export async function getUserUploads(
+  authToken: string,
+  page: number = 1,
+  limit: number = 10,
+  status: string = "active"
+): Promise<PaginatedResponse<FileUpload>> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    status,
+  });
+
+  const response = await fetch(`${API_URL}/history/uploads?${params}`, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Error al obtener archivos subidos",
+    }));
+    throw new Error(error.error || "Error al obtener archivos subidos");
+  }
+
+  return response.json();
+}
+
+/**
+ * Obtener archivos compartidos con el usuario
+ */
+export async function getSharedFiles(
+  authToken: string,
+  page: number = 1,
+  limit: number = 10,
+  revoked: string = "false"
+): Promise<PaginatedResponse<SharedFile>> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    revoked,
+  });
+
+  const response = await fetch(`${API_URL}/history/shared?${params}`, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Error al obtener archivos compartidos",
+    }));
+    throw new Error(error.error || "Error al obtener archivos compartidos");
+  }
+
+  return response.json();
+}
+
+/**
+ * Obtener notificaciones del usuario
+ */
+export async function getNotifications(
+  authToken: string,
+  page: number = 1,
+  limit: number = 20,
+  read: string = "all"
+): Promise<PaginatedResponse<Notification> & { unread_count: number }> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    read,
+  });
+
+  const response = await fetch(`${API_URL}/history/notifications?${params}`, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Error al obtener notificaciones",
+    }));
+    throw new Error(error.error || "Error al obtener notificaciones");
+  }
+
+  return response.json();
+}
+
+/**
+ * Marcar notificación como leída
+ */
+export async function markNotificationAsRead(
+  notificationId: string,
+  authToken: string
+): Promise<void> {
+  const response = await fetch(
+    `${API_URL}/history/notifications/${notificationId}/read`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Error al marcar notificación como leída",
+    }));
+    throw new Error(error.error || "Error al marcar notificación como leída");
+  }
+}
+
+/**
+ * Marcar todas las notificaciones como leídas
+ */
+export async function markAllNotificationsAsRead(
+  authToken: string
+): Promise<number> {
+  const response = await fetch(`${API_URL}/history/notifications/read-all`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Error al marcar todas las notificaciones como leídas",
+    }));
+    throw new Error(
+      error.error || "Error al marcar todas las notificaciones como leídas"
+    );
+  }
+
+  const data = await response.json();
+  return data.updated_count;
 }
